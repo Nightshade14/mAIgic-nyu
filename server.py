@@ -56,10 +56,10 @@ class Server:
     def fix_md_for_slack(self, md_text: str) -> str:
         # Convert **bold** to *bold* (Slack syntax)
         slack_text = re.sub(r"\*\*(.*?)\*\*", r"*\1*", md_text)
-        
+
         # Convert *italic* to _italic_ (Slack syntax)
         slack_text = re.sub(r"\*(.*?)\*", r"_\1_", slack_text)
-        
+
         # Convert [text](link) to <link|text> (Slack link syntax)
         slack_text = re.sub(r"\[(.*?)\]\((.*?)\)", r"<\2|\1>", slack_text)
 
@@ -75,18 +75,18 @@ class Server:
             LOGGER.info("response: %s", response)
 
             r = await app.client.chat_postMessage(
-                channel=os.getenv("SLACK_CHANNEL_ID"),\
+                channel=os.getenv("SLACK_CHANNEL_ID"),
                 thread_ts=thread_ts,
                 blocks=[
-                        {
-                            "type": "context",
-                            "elements": [
-                                {
-                                    "type": "mrkdwn",
-                                    "text": self.fix_md_for_slack(response),
-                                },
-                            ],
-                        },
+                    {
+                        "type": "context",
+                        "elements": [
+                            {
+                                "type": "mrkdwn",
+                                "text": self.fix_md_for_slack(response),
+                            },
+                        ],
+                    },
                 ],
                 unfurl_links=False,
                 unfurl_media=False,
@@ -94,7 +94,6 @@ class Server:
             r.validate()
 
         match message["text"]:
-
             case str(value) if "fetch" in value:
                 future = self.pool.submit(self.assistant.fetch_emails)
                 found = await self.await_future(future)
@@ -106,65 +105,73 @@ class Server:
 
                 time = datetime.fromisoformat(result["time_received"])
 
-                r = await app.client.chat_postMessage(
-                    channel=os.getenv("SLACK_CHANNEL_ID"),
-                    text=f"Handling `{result['id']}`...",
-                    unfurl_links=False,
-                    unfurl_media=False,
-                )
-                r.validate()
-                ts = r.get("ts")
+                # transaction
+                try:
+                    db = DB()
+                    db.session.begin_nested()
 
-                r = await app.client.chat_update(
-                    channel=os.getenv("SLACK_CHANNEL_ID"),
-                    ts=ts,
-                    blocks=[
-                        {
-                            "type": "context",
-                            "elements": [
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"`From:` {result['author']}",
-                                },
-                            ],
-                        },
-                        {
-                            "type": "context",
-                            "elements": [
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"`When:` <https://mail.google.com/mail/u/0/#inbox/{result['id']}|{time}>",
-                                },
-                            ],
-                        },
-                        {"type": "divider"},
-                        {
-                            "type": "context",
-                            "elements": [
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"{result['summary']}",
-                                },
-                            ],
-                        },
-                        {
-                            "type": "context",
-                            "elements": [
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"{result['action']}",
-                                },
-                            ],
-                        },
-                    ],
-                )
-                r.validate()
+                    r = await app.client.chat_postMessage(
+                        channel=os.getenv("SLACK_CHANNEL_ID"),
+                        text=f"Handling `{result['id']}`...",
+                        unfurl_links=False,
+                        unfurl_media=False,
+                    )
+                    r.validate()
+                    ts = r.get("ts")
 
-                db = DB()
-                item = db.session.query(Item).where(Item.id == result["id"]).one()
-                item.slack_channel = "C01CAH729TK"
-                item.slack_thread = r.get("ts")
-                db.session.commit()
+                    r = await app.client.chat_update(
+                        channel=os.getenv("SLACK_CHANNEL_ID"),
+                        ts=ts,
+                        blocks=[
+                            {
+                                "type": "context",
+                                "elements": [
+                                    {
+                                        "type": "mrkdwn",
+                                        "text": f"`From:` {result['author']}",
+                                    },
+                                ],
+                            },
+                            {
+                                "type": "context",
+                                "elements": [
+                                    {
+                                        "type": "mrkdwn",
+                                        "text": f"`When:` <https://mail.google.com/mail/u/0/#inbox/{result['id']}|{time}>",
+                                    },
+                                ],
+                            },
+                            {"type": "divider"},
+                            {
+                                "type": "context",
+                                "elements": [
+                                    {
+                                        "type": "mrkdwn",
+                                        "text": f"{result['summary']}",
+                                    },
+                                ],
+                            },
+                            {
+                                "type": "context",
+                                "elements": [
+                                    {
+                                        "type": "mrkdwn",
+                                        "text": f"{result['action']}",
+                                    },
+                                ],
+                            },
+                        ],
+                    )
+                    r.validate()
+
+                    item = db.session.query(Item).where(Item.id == result["id"]).one()
+                    item.slack_channel = "C01CAH729TK"
+                    item.slack_thread = r.get("ts")
+                    db.session.commit()
+                except:
+                    db.session.rollback()
+                    LOGGER.exception("Failed to post to Slack or update DB!")
+                    raise
 
         LOGGER.info("\n" + pformat(message))
 

@@ -166,16 +166,24 @@ class Assistant:
                 convo = Conversation(db, gpt, ItemKey.from_item(new_item))
 
                 LOGGER.info("handling %s", new_item.id)
+                
+                # transaction
+                db.session.begin_nested()
+                try:
+                    result = convo.handle_user_reply()
+                    result = result.removeprefix("```json").removesuffix("```")
+                    result = json.loads(result)
+                    result["id"] = new_item.id
 
-                result = convo.handle_user_reply()
-                result = result.removeprefix("```json").removesuffix("```")
-                result = json.loads(result)
-                result["id"] = new_item.id
-
-                LOGGER.info(pformat(result))
-                return result
+                    # Update item and commit only after successful Slack post
+                    LOGGER.info(pformat(result))
+                    return result
+                except:
+                    db.session.rollback()
+                    LOGGER.exception("Failed in handle_user_reply transaction!")
+                    raise
         except:
-            LOGGER.exception("")
+            LOGGER.exception("Failed in handle_one!")
             raise
 
     def handle_reply(self, thread_ts: str, reply: str) -> str:
