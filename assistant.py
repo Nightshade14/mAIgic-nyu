@@ -9,6 +9,8 @@ import logging
 from src.gpt.gpt import GPT, Line, Role
 from pydantic import BaseModel
 
+from utils import save_summary
+
 LOGGER = logging.getLogger(__file__)
 
 
@@ -32,6 +34,9 @@ GMAIL_PRIMER = Line(
         * "action": proposed next action
 
         Then answer my follow up questions in markdown supported by slack api.
+        
+        If the user asks to save content locally, I can use the save_summary function to write content to a local file.
+        For example, if they say "save this to my computer" or "write this locally", I should save the relevant content.
     """,
 )
 
@@ -77,7 +82,7 @@ class Conversation:
         ]
         for i in range(len(self.thread)):
             print(i, self.thread[i].content)
-        
+            
         if len(lines) == 2:  # this conversation has not started yet!
             assert message == ""  # there is no message by user yet!
         else:
@@ -93,8 +98,20 @@ class Conversation:
         #       for now assert it is not!
         assert len(r.choices) == 1
         choice = r.choices[0]
-        assert choice.finish_reason == "stop"
-        result = choice.message.content
+
+        # Handle function calling
+        if choice.message.tool_calls:
+            tool_call = choice.message.tool_calls[0]
+            if tool_call.function.name == "save_summary":
+                try:
+                    args = json.loads(tool_call.function.arguments)
+                    filepath = save_summary(args["content"], args.get("filename"))
+                    result = f"Content saved successfully to: {filepath}"
+                except Exception as e:
+                    result = f"Error saving content: {str(e)}"
+        else:
+            result = choice.message.content
+
         assert result
 
         self.db.session.add(
@@ -166,7 +183,7 @@ class Assistant:
                 convo = Conversation(db, gpt, ItemKey.from_item(new_item))
 
                 LOGGER.info("handling %s", new_item.id)
-                
+
                 # transaction
                 db.session.begin_nested()
                 try:

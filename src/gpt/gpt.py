@@ -19,10 +19,35 @@ class Line(BaseModel):
 class GPT:
     def __init__(self) -> None:
         self.client = OpenAI()
+        self.tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "save_summary",
+                    "description": "Save content to a local file",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "content": {
+                                "type": "string",
+                                "description": "The content to save"
+                            },
+                            "filename": {
+                                "type": "string",
+                                "description": "Optional filename (will generate if not provided)",
+                            }
+                        },
+                        "required": ["content"]
+                    }
+                }
+            }
+        ]
 
     def complete(self, log: list[Line]) -> ChatCompletion:
         return self.client.chat.completions.create(
             # model="gpt-4",
             model="gpt-4o-mini",
             messages=[{"role": x.role, "content": x.content} for x in log],
+            tools=self.tools,
+            tool_choice="auto"
         )
