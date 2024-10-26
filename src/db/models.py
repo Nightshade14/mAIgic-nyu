@@ -14,7 +14,7 @@ class ItemType(enum.StrEnum):
 class Item(Base):
     __tablename__ = "items"
 
-    type = Column(Enum(ItemType), nullable=False, primary_key=True)
+    type = Column(Enum(ItemType), nullable=False, primary_key=True)  # gmail for now
     id = Column(String, primary_key=True)
     slack_channel = Column(String)
     slack_thread = Column(String)

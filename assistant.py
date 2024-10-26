@@ -15,15 +15,16 @@ LOGGER = logging.getLogger(__file__)
 GMAIL_PRIMER = Line(
     role=Role.SYSTEM,
     # FIXME: this content needs to be tailored to the custome
+    # TODO: change below params to percent
+    # below is the first line
     content="""
-        I am Kamen Yotov.
-        My emails are kamen@yotov.org, kyotov@gmail.com, ky12@nyu.edu.
+        I am Frank Zhao.
+        My emails is bz2190@nyu.edu.
         
         When I first receive an email, I want you to analyze it respond with the analysis in json as follows:
 
         * "author"
         * "time_received" in iso format
-        * "categories"
             ** "urgent": bool
             ** "important": bool
             ** "spam": bool
@@ -70,10 +71,13 @@ class Conversation:
         ]
 
     def handle_user_reply(self, message: str = "") -> str:
+        # first line is instruction for gpt, second line is the email
         lines = self.primer_lines() + [
             Line(role=x.role, content=x.content) for x in self.thread
         ]
-
+        for i in range(len(self.thread)):
+            print(i, self.thread[i].content)
+        
         if len(lines) == 2:  # this conversation has not started yet!
             assert message == ""  # there is no message by user yet!
         else:
