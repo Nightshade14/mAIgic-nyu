@@ -43,3 +43,4 @@ class Gmail:
 
     def get_message(self, message_id: str):
         return self._client.users().messages().get(userId="me", id=message_id).execute()
+    
