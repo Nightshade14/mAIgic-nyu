@@ -9,6 +9,8 @@ import logging
 from src.gpt.gpt import GPT, Line, Role
 from pydantic import BaseModel
 
+from utils import save_summary
+
 LOGGER = logging.getLogger(__file__)
 
 
@@ -32,6 +34,11 @@ GMAIL_PRIMER = Line(
         * "action": proposed next action
 
         Then answer my follow up questions in markdown supported by slack api.
+        
+        If a user requests to save content locally (e.g., "save this to file" or "write this locally"), 
+        use the save_summary function to write the content. After using the save_summary function, 
+        always respond with a confirmation message that includes the file path where the content was saved.
+        For the initial email analysis, return the JSON format without calling save_summary.
     """,
 )
 
@@ -70,14 +77,31 @@ class Conversation:
             Line(role=Role.USER, content=self.item.content),
         ]
 
+    def handle_function_call(self, tool_call) -> str:
+        """Handle function calls from GPT"""
+        # debug
+        LOGGER.info("Handling function call: %s", tool_call.function.name)
+
+        try:
+            if tool_call.function.name == "save_summary":
+                args = json.loads(tool_call.function.arguments)
+                filepath = save_summary(args.get("content"), args.get("filename"))
+                return f"Content saved successfully to {filepath}"
+            else:
+                # debug
+                LOGGER.warning("Unknown function call: %s", tool_call.function.name)
+                return f"Unknown function: {tool_call.function.name}"
+        except Exception as e:
+            # debug
+            LOGGER.error("Function call failed: %s", str(e))
+            return f"Function call failed: {str(e)}"
+
     def handle_user_reply(self, message: str = "") -> str:
         # first line is instruction for gpt, second line is the email
         lines = self.primer_lines() + [
             Line(role=x.role, content=x.content) for x in self.thread
         ]
-        for i in range(len(self.thread)):
-            print(i, self.thread[i].content)
-        
+
         if len(lines) == 2:  # this conversation has not started yet!
             assert message == ""  # there is no message by user yet!
         else:
@@ -87,35 +111,78 @@ class Conversation:
             assert message
             lines.append(Line(role=Role.USER, content=message))
 
-        r = self.gpt.complete(lines)
+        try:
+            # debug
+            LOGGER.info("Sending request to GPT")
+            r = self.gpt.complete(lines)
 
-        # TODO: this is where we need to differentiate if it is a tool/function call...
-        #       for now assert it is not!
-        assert len(r.choices) == 1
-        choice = r.choices[0]
-        assert choice.finish_reason == "stop"
-        result = choice.message.content
-        assert result
+            # Handle potential function calls
+            if (
+                hasattr(r.choices[0].message, "tool_calls")
+                and r.choices[0].message.tool_calls
+            ):
+                # debug
+                LOGGER.info("Function call detected")
 
-        self.db.session.add(
-            Chat(
-                type=self.item.type,
-                id=self.item.id,
-                role=Role.USER,
-                content=message,
+                tool_call = r.choices[0].message.tool_calls[0]
+                function_response = self.handle_function_call(tool_call)
+
+                # Add function call and response to conversation
+                lines.append(
+                    Line(
+                        role=Role.ASSISTANT,
+                        content=r.choices[0].message.content or "",
+                        name=tool_call.function.name,
+                    )
+                )
+                lines.append(
+                    Line(
+                        role=Role.FUNCTION,
+                        content=function_response,
+                        name=tool_call.function.name,
+                    )
+                )
+
+                # Get final response
+                r = self.gpt.complete(lines)
+
+            assert len(r.choices) == 1
+            choice = r.choices[0]
+            # Modified assertion to accept both "stop" and "tool_calls"
+            assert choice.finish_reason in [
+                "stop",
+                "tool_calls",
+            ], f"Unexpected finish_reason: {choice.finish_reason}"
+            result = choice.message.content
+            assert result
+
+            # Save to database
+            if message:
+                self.db.session.add(
+                    Chat(
+                        type=self.item.type,
+                        id=self.item.id,
+                        role=Role.USER,
+                        content=message,
+                    )
+                )
+
+            self.db.session.add(
+                Chat(
+                    type=self.item.type,
+                    id=self.item.id,
+                    role=Role.ASSISTANT,
+                    content=result,
+                )
             )
-        )
-        self.db.session.add(
-            Chat(
-                type=self.item.type,
-                id=self.item.id,
-                role=Role.ASSISTANT,
-                content=result,
-            )
-        )
-        self.db.session.commit()
+            self.db.session.commit()
 
-        return result
+            return result
+
+        except Exception as e:
+            # debug
+            LOGGER.error("Error in handle_user_reply: %s", str(e))
+            raise
 
 
 class Assistant:
@@ -166,7 +233,7 @@ class Assistant:
                 convo = Conversation(db, gpt, ItemKey.from_item(new_item))
 
                 LOGGER.info("handling %s", new_item.id)
-                
+
                 # transaction
                 db.session.begin_nested()
                 try:
