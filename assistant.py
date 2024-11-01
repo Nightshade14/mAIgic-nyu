@@ -192,8 +192,8 @@ class Assistant:
                 return result
             else:
                 raise RuntimeError(f"item not found for {thread_ts}")
-        except:
-            LOGGER.exception("")
+        except Exception as error_msg:
+            LOGGER.exception(str(error_msg))
 
 
 if __name__ == "__main__":

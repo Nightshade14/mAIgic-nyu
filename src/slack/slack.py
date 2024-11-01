@@ -5,7 +5,8 @@ from slack_sdk import WebClient
 
 class Slack:
     def __init__(self) -> None:
-        client = WebClient(token=os.getenv("SLACK_BOT_TOKEN"))
+        # replaced client with self.client as client was not used anywhere
+        self.client = WebClient(token=os.getenv("SLACK_BOT_TOKEN"))
 
     def send(self, thread: str | None, text: str) -> None:
         r = self.client.chat_postMessage(

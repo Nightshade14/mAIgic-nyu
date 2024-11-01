@@ -41,7 +41,7 @@ class GmailMessagePart:
                 if "<html" in decoded:
                     decoded = html2text(decoded)
                 return decoded
-            except Exception as e:
+            except Exception:
                 pprint(self._part["body"])
                 raise
         return ""
