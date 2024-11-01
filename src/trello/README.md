@@ -48,19 +48,31 @@ Main class for interacting with the Trello API.
 
 #### Key Methods:
 ```python
-def create_card(list_id: str, name: str, desc: str = "", due_date: Optional[datetime] = None) -> TrelloCard
-def add_attachment(card_id: str, url: str, name: Optional[str] = None) -> bool
-def create_checklist(card_id: str, name: str) -> TrelloChecklist
-def add_checklist_item(checklist_id: str, name: str, checked: bool = False) -> Dict[str, Any]
-def update_card_due_date(card_id: str, due_date: Optional[datetime]) -> bool
-def add_member_to_card(card_id: str, member_id: str) -> bool
-def remove_member_from_card(card_id: str, member_id: str) -> bool
-def get_board_members(board_id: str) -> List[Dict[str, Any]]
-def search_cards(query: str, board_id: Optional[str] = None) -> List[TrelloCard]
-def add_comment_to_card(card_id: str, comment: str) -> bool
-def add_label_to_card(card_id: str, label_name: str, color: str = "blue") -> bool
-def move_card(card_id: str, target_list_id: str) -> bool
-def archive_card(card_id: str) -> bool
+create_card(list_id: str, name: str, desc: str = "", due_date: Optional[datetime] = None) -> TrelloCard
+
+add_attachment(card_id: str, url: str, name: Optional[str] = None) -> bool
+
+create_checklist(card_id: str, name: str) -> TrelloChecklist
+
+add_checklist_item(checklist_id: str, name: str, checked: bool = False) -> Dict[str, Any]
+
+update_card_due_date(card_id: str, due_date: Optional[datetime]) -> bool
+
+add_member_to_card(card_id: str, member_id: str) -> bool
+
+remove_member_from_card(card_id: str, member_id: str) -> bool
+
+get_board_members(board_id: str) -> List[Dict[str, Any]]
+
+search_cards(query: str, board_id: Optional[str] = None) -> List[TrelloCard]
+
+add_comment_to_card(card_id: str, comment: str) -> bool
+
+add_label_to_card(card_id: str, label_name: str, color: str = "blue") -> bool
+
+move_card(card_id: str, target_list_id: str) -> bool
+
+archive_card(card_id: str) -> bool
 ```
 
 ### Data Classes
@@ -69,24 +81,24 @@ def archive_card(card_id: str) -> bool
 ```python
 @dataclass
 class TrelloCard:
-id: str
-name: str
-desc: str
-url: str
-board_id: str
-list_id: str
-due_date: Optional[datetime] = None
-members: List[str] = None
-labels: List[Dict[str, str]] = None
+  id: str
+  name: str
+  desc: str
+  url: str
+  board_id: str
+  list_id: str
+  due_date: Optional[datetime] = None
+  members: List[str] = None
+  labels: List[Dict[str, str]] = None
 ```
 
 #### TrelloChecklist
 ```python
 @dataclass
 class TrelloChecklist:
-id: str
-name: str
-items: List[Dict[str, Any]]
+  id: str
+  name: str
+  items: List[Dict[str, Any]]
 ```
 
 ## Error Handling
@@ -102,6 +114,7 @@ The module includes custom exceptions for better error handling:
 The module includes comprehensive tests. Run them using:
 
 ```bash
+pytest
 pytest --cov=src.trello --cov-report=term-missing
 ```
 
