@@ -1,0 +1,14 @@
+[project]
+name = "maigic-nyu"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "mypy>=1.13.0",
+    "pytest>=8.3.3",
+    "ruff>=0.7.2",
+]
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = ["S101", "D203", "D213", "COM812", "ISC001"]

@@ -1,0 +1,65 @@
+version: 2.1
+
+executors:
+  my-docker-executor:
+    docker:
+      - image: cimg/python:3.11.10
+
+jobs:
+  build:
+    executor: my-docker-executor
+    steps:
+      - checkout
+
+      - run:
+          name: Get uv via curl and install it
+          command: |
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - persist_to_workspace:
+          root: /home/circleci/
+          paths:
+            - .cargo
+
+  test:
+    executor: my-docker-executor
+    steps:
+      - checkout
+
+      - attach_workspace:
+          at: /home/circleci/
+
+      - run:
+          name: Set-up dependencies path
+          command: echo 'export PATH=$HOME/.cargo/bin:$PATH' >> $BASH_ENV
+
+      - run:
+          name: Set-up project dependencies
+          command: uv sync
+
+      - run:
+          name: Format files with Ruff
+          # ignore = ["COM812", "ISC001"] warnings
+          # should I format files in CI??????
+          command: uv run ruff format .
+
+      - run:
+          name: Static Type Checking with mypy
+          command: uv run mypy .
+
+      - run:
+          name: Linting checks with Ruff
+          # ignore = ["S101", "D203", "D213"]
+          command: uv run ruff check .
+
+      - run:
+          name: Run unit tests
+          command: uv run pytest .
+
+workflows:
+  build_and_test:
+    jobs:
+      - build
+      - test:
+          requires:
+            - build
