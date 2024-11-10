@@ -1,3 +1,0 @@
-Activate virtual env : source venv/bin/activate
-Start server : python3 slack_oauth.py
-Check if server is running by going to this URL http://127.0.0.1:3000/

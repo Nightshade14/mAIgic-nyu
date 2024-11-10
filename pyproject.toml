@@ -1,14 +1,19 @@
 [project]
-name = "maigic"
+name = "maigic-nyu"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
-    "numpy>=2.1.1",
+    "mypy>=1.13.0",
     "pytest>=8.3.3",
-    "ruff>=0.6.5",
+    "ruff>=0.7.3",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [tool.ruff.lint]
 select = ["ALL"]
-extend-ignore = ["S101", "D211", "D213"]
+ignore = ["S101", "D203", "D213", "COM812", "ISC001"]

@@ -51,21 +51,6 @@ Note: One can run tools like ruff and pytest independently or can run them throu
 
 Note: Request to keep all `communication` in the Google Chats Project Group.
 
-## Trello Setup
-
-- Create a Trello account.
-- Go to https://trello.com/power-ups/admin to create a new Power-up.
-- Check the new power-up, click `API key` on the left side panel.
-- Copy the API key and visit https://trello.com/1/authorize?expiration=1day&name=yourAppName&scope=read,write&response_type=token&key=your_api_key, replace `your_api_key` with your own api key. The expiration and the name can be changed if needed.
-- Create a .env file, input your API key and token:
-
-```
-TRELLO_API_KEY=your_api_key
-TRELLO_OAUTH_TOKEN=your_token
-```
-
-- Run TrelloManager.py and you will see the test result.
-
 # License
 
 mAIgic has a MIT-style license, as found in the [LICENSE](LICENSE) file.
