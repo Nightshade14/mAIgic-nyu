@@ -1,0 +1,70 @@
+version: 2.1
+
+executors:
+  my-docker-executor:
+    docker:
+      - image: cimg/python:3.12
+
+jobs:
+  build:
+    executor: my-docker-executor
+    steps:
+      - checkout
+
+      - run:
+          name: Get uv via curl and install it
+          command: |
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - persist_to_workspace:
+          root: /home/circleci/
+          paths:
+            - .local
+
+  test:
+    executor: my-docker-executor
+    steps:
+      - checkout
+
+      - attach_workspace:
+          at: /home/circleci/
+
+      - run:
+          name: Set-up dependencies path
+          command: echo 'export PATH=$HOME/.local/bin:$PATH' >> $BASH_ENV
+
+      - run:
+          name: Set-up project dependencies
+          command: uv sync --extra dev
+
+      - run:
+          name: Create test results directory
+          command: mkdir -p test-results
+
+      - run:
+          name: Static Type Checking with mypy
+          command: uv run mypy .
+
+      - run:
+          name: Linting checks with Ruff
+          # ignore = ["S101", "D203", "D213", "COM812", "ISC001"]
+          command: uv run ruff check .
+
+      - run:
+          name: Run unit tests with coverage
+          command: uv run pytest tests/ --junitxml=test-results/coverage.xml
+
+      - store_test_results:
+          path: test-results
+
+      - store_artifacts:
+          path: test-results/coverage.xml
+          destination: coverage-report
+
+workflows:
+  build_and_test:
+    jobs:
+      - build
+      - test:
+          requires:
+            - build

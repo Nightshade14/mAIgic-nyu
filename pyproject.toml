@@ -1,0 +1,60 @@
+[project]
+name = "maigic-nyu"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "google-api-python-client>=2.146.0",
+    "google-auth>=2.35.0",
+    "google-auth-httplib2>=0.2.0",
+    "google-auth-oauthlib>=1.2.1",
+    "google-apps-chat>=0.1.11",
+    "openai>=1.50.2",
+    "pydantic>=2.9.2",
+    "html2text>=2024.2.26",
+    "slack-sdk>=3.33.1",
+    "sqlalchemy>=2.0.35",
+    "slack-bolt>=1.20.1",
+    "trio>=0.26.2",
+    "trio-asyncio>=0.15.0",
+    "aiohttp>=3.10.8",
+    "asyncio>=3.4.3",
+    "humanreadable>=0.4.0",
+    "pyyaml>=6.0.2",
+    "google-auth-stubs>=0.3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "mypy>=1.13.0",
+    "pytest>=8.3.3",
+    "ruff>=0.7.3",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/maigic_nyu"]
+
+[tool.setuptools.package-data]
+maigic_nyu = ["py.typed"]
+
+[tool.mypy]
+ignore_missing_imports = true
+mypy_path = "src"
+explicit_package_bases = true
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = ["S101", "D203", "D213", "COM812", "ISC001", "PLC0414", "T203", "TD002", "TD003", "FIX002", "ANN401", "RET504"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --strict-markers"
