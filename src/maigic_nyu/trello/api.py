@@ -4,7 +4,7 @@ api.py
 This module provides a simplified interface for interacting with Trello.
 It hides the implementation details of TrelloService and TrelloAPI.
 """
-from maigic_nyu.trello.trello_service import TrelloService
+from trello_service import TrelloService
 
 class TrelloAPI:
     def __init__(self):

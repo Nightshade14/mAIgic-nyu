@@ -7,7 +7,7 @@ finding or creating lists, and creating cards based on email content.
 import os
 from dotenv import load_dotenv
 from datetime import datetime
-from maigic_nyu.trello._trello import TrelloAPI
+from _trello import TrelloClient
 
 class TrelloService:
     def __init__(self):
