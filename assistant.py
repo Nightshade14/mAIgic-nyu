@@ -10,6 +10,7 @@ from src.gpt.gpt import GPT, Line, Role
 from pydantic import BaseModel
 
 from utils import save_summary
+from src.trello.api import TrelloAPI
 
 LOGGER = logging.getLogger(__file__)
 
@@ -39,6 +40,13 @@ GMAIL_PRIMER = Line(
         use the save_summary function to write the content. After using the save_summary function, 
         always respond with a confirmation message that includes the file path where the content was saved.
         For the initial email analysis, return the JSON format without calling save_summary.
+        
+        If a user requests to create a card to Trello (e.g., "create a notice in Trello" or "make a reminder for me")
+        call the `create_card` function from TrelloAPI class. The card should include the following fields:
+        * card_type: 'meeting', 'event', or 'general'
+        * card_name: The title of the card
+        * card_desc: A brief description of the card
+        * due_date: Optional, in ISO 8601 format
     """,
 )
 
@@ -87,6 +95,20 @@ class Conversation:
                 args = json.loads(tool_call.function.arguments)
                 filepath = save_summary(args.get("content"), args.get("filename"))
                 return f"Content saved successfully to {filepath}"
+            elif tool_call.function.name == "create_card":
+                args = json.loads(tool_call.function.arguments)
+                trello_api = TrelloAPI()
+                try:
+                    card = trello_api.create_card(
+                        card_type=args.get("card_type"),
+                        card_name=args.get("card_name"),
+                        card_desc=args.get("card_desc"),
+                        due_date=args.get("due_date"),
+                    )
+                    return f"Card created successfully: {card['name']} (URL: {card['url']})"
+                except Exception as e:
+                    LOGGER.error(f"Failed to create Trello card: {str(e)}")
+                    return "Failed to create Trello card. Please check the details and try again."
             else:
                 # debug
                 LOGGER.warning("Unknown function call: %s", tool_call.function.name)
