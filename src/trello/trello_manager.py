@@ -2,7 +2,7 @@
 import logging
 import os
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
@@ -40,8 +40,8 @@ class TrelloCard:
     board_id: str
     list_id: str
     due_date: datetime | None = None
-    members: list[str] = None
-    labels: list[dict[str, str]] = None
+    members: list[str] = field(default_factory=list)
+    labels: list[dict[str, str]] = field(default_factory=list)  # Use field with default_factory
 
     def __post_init__(self):
         self.members = self.members or []
