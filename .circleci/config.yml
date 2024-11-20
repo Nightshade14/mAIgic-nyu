@@ -3,7 +3,7 @@ version: 2.1
 executors:
   my-docker-executor:
     docker:
-      - image: cimg/python:3.11.10
+      - image: cimg/python:3.12
 
 jobs:
   build:
@@ -19,7 +19,7 @@ jobs:
       - persist_to_workspace:
           root: /home/circleci/
           paths:
-            - .cargo
+            - .local
 
   test:
     executor: my-docker-executor
@@ -31,19 +31,35 @@ jobs:
 
       - run:
           name: Set-up dependencies path
-          command: echo 'export PATH=$HOME/.cargo/bin:$PATH' >> $BASH_ENV
+          command: echo 'export PATH=$HOME/.local/bin:$PATH' >> $BASH_ENV
 
       - run:
           name: Set-up project dependencies
-          command: uv sync
+          command: uv sync --extra dev
 
       - run:
-          name: Format python files with ruff
-          command: uv run ruff check . --fix
+          name: Create test results directory
+          command: mkdir -p test-results
 
       - run:
-          name: Run test files
-          command: uv run pytest
+          name: Static Type Checking with mypy
+          command: uv run mypy .
+
+      - run:
+          name: Linting checks with Ruff
+          # ignore = ["S101", "D203", "D213", "COM812", "ISC001"]
+          command: uv run ruff check .
+
+      - run:
+          name: Run unit tests with coverage
+          command: uv run pytest tests/ --junitxml=test-results/coverage.xml
+
+      - store_test_results:
+          path: test-results
+
+      - store_artifacts:
+          path: test-results/coverage.xml
+          destination: coverage-report
 
 workflows:
   build_and_test:
