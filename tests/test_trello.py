@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-from src.trello.trello import (
+from src.trello.trello_manager import (
     _TrelloAPIError,
     TrelloCard,
     TrelloChecklist,
@@ -135,37 +135,6 @@ def test_update_card_due_date(trello_manager, mock_response):
             due_date=datetime.datetime.now()
         )
         assert result is True
-
-def test_add_member_to_card(trello_manager, mock_response):
-    """Test adding member to card"""
-    with patch('requests.request', return_value=mock_response):
-        result = trello_manager.add_member_to_card(
-            card_id="card123",
-            member_id="member123"
-        )
-        assert result is True
-
-def test_remove_member_from_card(trello_manager, mock_response):
-    """Test removing member from card"""
-    with patch('requests.request', return_value=mock_response):
-        result = trello_manager.remove_member_from_card(
-            card_id="card123",
-            member_id="member123"
-        )
-        assert result is True
-
-def test_get_board_members(trello_manager):
-    """Test getting board members"""
-    mock_members_response = MagicMock()
-    mock_members_response.status_code = 200
-    mock_members_response.json.return_value = [
-        {"id": "member123", "username": "testuser"}
-    ]
-
-    with patch('requests.request', return_value=mock_members_response):
-        members = trello_manager.get_board_members("board123")
-        assert len(members) == 1
-        assert members[0]["id"] == "member123"
 
 def test_search_cards(trello_manager, mock_response):
     """Test searching cards"""

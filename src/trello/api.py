@@ -1,11 +1,11 @@
 # A data class representing a Trello card, encapsulating its attributes and initializing default values for members and labels.
-from src.trello.trello import TrelloCard
+from src.trello.trello_manager import TrelloCard
 
 # A data class representing a Trello checklist, containing its ID, name, and items.
-from src.trello.trello import TrelloChecklist
+from src.trello.trello_manager import TrelloChecklist
 
 # A class that interacts with the Trello API, providing methods to manage cards, lists, and other Trello resources while handling API requests and responses.
-from src.trello.trello import TrelloManager
+from src.trello.trello_manager import TrelloManager
 
 # TrelloManager comes with the following methods:
 # 1. create_card: Creates a new Trello card in a specified list with optional description and due date.
