@@ -5,11 +5,11 @@ import pytest
 import requests
 
 from src.trello.trello_manager import (
-    _TrelloAPIError,
     TrelloCard,
     TrelloChecklist,
-    _TrelloError,
     TrelloManager,
+    _TrelloAPIError,
+    _TrelloError,
     _TrelloRateLimitError,
 )
 
@@ -135,7 +135,6 @@ def test_update_card_due_date(trello_manager, mock_response):
             due_date=datetime.datetime.now()
         )
         assert result is True
-
 def test_search_cards(trello_manager, mock_response):
     """Test searching cards"""
     mock_search_response = MagicMock()

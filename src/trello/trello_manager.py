@@ -41,7 +41,7 @@ class TrelloCard:
     list_id: str
     due_date: datetime | None = None
     members: list[str] = field(default_factory=list)
-    labels: list[dict[str, str]] = field(default_factory=list)  # Use field with default_factory
+    labels: list[dict[str, str]] = field(default_factory=list)
 
     def __post_init__(self):
         self.members = self.members or []
