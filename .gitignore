@@ -3,6 +3,5 @@
 /.env
 /.venv
 /.ruff_cache
-/.circleci
 /.pytest_cache
 /.coverage
