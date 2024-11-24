@@ -47,7 +47,7 @@ jobs:
 
       - run:
           name: Linting checks with Ruff
-          # ignore = ["S101", "D203", "D213", "COM812", "ISC001"]
+          # ignore = ["S101", "D203", "D213", "COM812", "ISC001", "PLW0603", "FBT001", "FBT002", "SLF001", "ANN001", "ANN201", "PLR2004", "DTZ005", "SIM117", "D103", "BLE001"]
           command: uv run ruff check .
 
       - run:
