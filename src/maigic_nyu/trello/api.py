@@ -1,11 +1,10 @@
-"""API module that exposes Trello functionality to users."""
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar
 
-from src.maigic_nyu.trello._trello_manager import (  # Fix the import path
+from src.maigic_nyu.trello._trello_manager import (
     TrelloCard,
     TrelloChecklist,
-    TrelloManager,
+    TrelloManager as BaseTrelloManager,
     _TrelloAPIError,
     _TrelloError,
     _TrelloRateLimitError,
@@ -32,27 +31,23 @@ __all__ = [
     "update_card_due_date",
 ]
 
-# Re-export exceptions with public names
+
+class TrelloManager(BaseTrelloManager):
+    """Singleton class to manage Trello interactions."""
+    _instance: ClassVar["TrelloManager"] = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls, *args, **kwargs)
+        return cls._instance
+
+
 TrelloError = _TrelloError
 TrelloAPIError = _TrelloAPIError
 TrelloRateLimitError = _TrelloRateLimitError
 
-# Global TrelloManager instance
-_trello = None
 
-def _get_trello() -> TrelloManager:
-    """Get or create the global TrelloManager instance."""
-    global _trello
-    if _trello is None:
-        _trello = TrelloManager()
-    return _trello
-
-def create_card(
-    list_id: str,
-    name: str,
-    description: str = "",
-    due_date: datetime | None = None
-) -> TrelloCard:
+def create_card(list_id: str, name: str, description: str = "", due_date: datetime | None = None) -> TrelloCard:
     """Create a new Trello card.
 
     Args:
@@ -63,15 +58,11 @@ def create_card(
 
     Returns:
         TrelloCard object representing the created card
-
     """
-    return _get_trello().create_card(list_id, name, description, due_date)
+    return TrelloManager().create_card(list_id, name, description, due_date)
 
-def add_attachment(
-    card_id: str,
-    url: str,
-    name: str | None = None
-) -> bool:
+
+def add_attachment(card_id: str, url: str, name: str | None = None) -> bool:
     """Add an attachment to a card.
 
     Args:
@@ -81,9 +72,9 @@ def add_attachment(
 
     Returns:
         True if attachment was added successfully
-
     """
-    return _get_trello().add_attachment(card_id, url, name)
+    return TrelloManager().add_attachment(card_id, url, name)
+
 
 def create_checklist(card_id: str, name: str) -> TrelloChecklist:
     """Create a new checklist on a card.
@@ -94,16 +85,11 @@ def create_checklist(card_id: str, name: str) -> TrelloChecklist:
 
     Returns:
         TrelloChecklist object representing the created checklist
-
     """
-    return _get_trello().create_checklist(card_id, name)
+    return TrelloManager().create_checklist(card_id, name)
 
-def add_checklist_item(
-    checklist_id: str,
-    name: str,
-    *, # Make checked keyword-only
-    checked: bool = False
-) -> dict[str, Any]:
+
+def add_checklist_item(checklist_id: str, name: str, *, checked: bool = False) -> dict[str, Any]:
     """Add an item to a checklist.
 
     Args:
@@ -113,18 +99,11 @@ def add_checklist_item(
 
     Returns:
         Dictionary containing the created checklist item details
-
     """
-    return _get_trello().add_checklist_item(
-        checklist_id=checklist_id,
-        name=name,
-        checked=checked
-    )
+    return TrelloManager().add_checklist_item(checklist_id=checklist_id, name=name, checked=checked)
 
-def update_card_due_date(
-    card_id: str,
-    due_date: datetime | None
-) -> bool:
+
+def update_card_due_date(card_id: str, due_date: datetime | None) -> bool:
     """Update or remove a card's due date.
 
     Args:
@@ -133,14 +112,11 @@ def update_card_due_date(
 
     Returns:
         True if the due date was updated successfully
-
     """
-    return _get_trello().update_card_due_date(card_id, due_date)
+    return TrelloManager().update_card_due_date(card_id, due_date)
 
-def search_cards(
-    query: str,
-    board_id: str | None = None
-) -> list[TrelloCard]:
+
+def search_cards(query: str, board_id: str | None = None) -> list[TrelloCard]:
     """Search for cards with optional board filter.
 
     Args:
@@ -149,9 +125,9 @@ def search_cards(
 
     Returns:
         List of TrelloCard objects matching the search criteria
-
     """
-    return _get_trello().search_cards(query, board_id)
+    return TrelloManager().search_cards(query, board_id)
+
 
 def get_board_lists(board_id: str) -> list[str]:
     """Get all lists in a board.
@@ -161,9 +137,9 @@ def get_board_lists(board_id: str) -> list[str]:
 
     Returns:
         List of list IDs in the board
-
     """
-    return _get_trello().get_lists(board_id)
+    return TrelloManager().get_lists(board_id)
+
 
 def add_comment(card_id: str, comment: str) -> bool:
     """Add a comment to a card.
@@ -174,15 +150,11 @@ def add_comment(card_id: str, comment: str) -> bool:
 
     Returns:
         True if comment was added successfully
-
     """
-    return _get_trello().add_comment_to_card(card_id, comment)
+    return TrelloManager().add_comment_to_card(card_id, comment)
 
-def add_label(
-    card_id: str,
-    label_name: str,
-    color: str = "blue"
-) -> bool:
+
+def add_label(card_id: str, label_name: str, color: str = "blue") -> bool:
     """Add a label to a card.
 
     Args:
@@ -192,9 +164,9 @@ def add_label(
 
     Returns:
         True if label was added successfully
-
     """
-    return _get_trello().add_label_to_card(card_id, label_name, color)
+    return TrelloManager().add_label_to_card(card_id, label_name, color)
+
 
 def move_card(card_id: str, target_list_id: str) -> bool:
     """Move a card to a different list.
@@ -205,9 +177,9 @@ def move_card(card_id: str, target_list_id: str) -> bool:
 
     Returns:
         True if card was moved successfully
-
     """
-    return _get_trello().move_card(card_id, target_list_id)
+    return TrelloManager().move_card(card_id, target_list_id)
+
 
 def archive_card(card_id: str) -> bool:
     """Archive (close) a card.
@@ -217,9 +189,9 @@ def archive_card(card_id: str) -> bool:
 
     Returns:
         True if card was archived successfully
-
     """
-    return _get_trello().archive_card(card_id)
+    return TrelloManager().archive_card(card_id)
+
 
 def get_list_name(list_id: str) -> str:
     """Get the name of a list.
@@ -229,9 +201,9 @@ def get_list_name(list_id: str) -> str:
 
     Returns:
         Name of the list, or empty string if not found
-
     """
-    return _get_trello().get_list_name(list_id)
+    return TrelloManager().get_list_name(list_id)
+
 
 def create_list(list_name: str, board_id: str) -> str:
     """Create a new list on a board.
@@ -242,6 +214,5 @@ def create_list(list_name: str, board_id: str) -> str:
 
     Returns:
         ID of the created list, or empty string if creation failed
-
     """
-    return _get_trello().create_a_list(list_name, board_id)
+    return TrelloManager().create_a_list(list_name, board_id)

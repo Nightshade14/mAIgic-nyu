@@ -1,10 +1,9 @@
-"""TrelloManager module interacts with the Trello API to create cards."""
 import logging
 import os
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar
 
 import requests
 from dotenv import load_dotenv
@@ -14,8 +13,8 @@ logger = logging.getLogger(__name__)
 
 HTTP_OK = 200
 MAX_RETRIES = 3
-RETRY_DELAY = 1  # seconds
-RATE_LIMIT_STATUS = 429  # HTTP status code for rate limit exceeded
+RETRY_DELAY = 1
+RATE_LIMIT_STATUS = 429
 
 class _TrelloError(Exception):
     """Base exception for Trello-related errors."""
@@ -53,33 +52,38 @@ class TrelloChecklist:
     name: str
     items: list[dict[str, Any]]
 
+
 class TrelloManager:
-    """A class to interact with the Trello API."""
+    """A class to interact with the Trello API using Singleton Pattern."""
+
+    _instance: ClassVar["TrelloManager"] = None
+    BASE_URL: ClassVar[str] = "https://api.trello.com/1"
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls, *args, **kwargs)
+        return cls._instance
 
     def __init__(self) -> None:
-        """Initialize TrelloManager with API credentials."""
         load_dotenv()
         self.api_key = os.getenv("TRELLO_API_KEY")
         self.token = os.getenv("TRELLO_OAUTH_TOKEN")
-        self.BASE_URL = "https://trello.com/invite/b/673e7c539b668d5238d14115/ATTI9797fcaf204991af7e18fa9e0c3a421f24EC6638/maigictest"
 
         if not self.api_key or not self.token:
             msg = "Missing Trello API credentials"
             raise _TrelloError(msg)
 
-    def _make_request(self,
-                     method: str,
-                     endpoint: str,
-                     params: dict[str, Any] | None = None,
-                     data: dict[str, Any] | None = None,
-                     retries: int = MAX_RETRIES) -> dict[str, Any]:
-        """Make a request to the Trello API with retry logic and error handling."""
+    def _make_request(
+        self,
+        method: str,
+        endpoint: str,
+        params: dict[str, Any] | None = None,
+        data: dict[str, Any] | None = None,
+        retries: int = MAX_RETRIES,
+    ) -> dict[str, Any]:
         url = f"{self.BASE_URL}/{endpoint.lstrip('/')}"
         params = params or {}
-        params.update({
-            "key": self.api_key,
-            "token": self.token,
-        })
+        params.update({"key": self.api_key, "token": self.token})
 
         for attempt in range(retries):
             try:
@@ -111,18 +115,10 @@ class TrelloManager:
         msg = "Max retries exceeded"
         raise _TrelloAPIError(msg)
 
-    def create_card(self, list_id: str, name: str, desc: str = "",
-                   due_date: datetime | None = None) -> TrelloCard:
-        """Create a new card with enhanced features."""
-        params = {
-            "idList": list_id,
-            "name": name,
-            "desc": desc,
-        }
-
+    def create_card(self, list_id: str, name: str, desc: str = "", due_date: datetime | None = None) -> TrelloCard:
+        params = {"idList": list_id, "name": name, "desc": desc}
         if due_date:
             params["due"] = due_date.isoformat()
-
         data = self._make_request("post", "/cards", params=params)
         return TrelloCard(
             id=data["id"],
@@ -136,22 +132,17 @@ class TrelloManager:
             labels=data.get("labels", []),
         )
 
-    def add_attachment(self,
-                       card_id: str,
-                       url: str,
-                       name: str | None = None) -> bool:
+    def add_attachment(self, card_id: str, url: str, name: str | None = None) -> bool:
         """Add an attachment to a card."""
         params = {"url": url}
         if name:
             params["name"] = name
-
         self._make_request("post", f"/cards/{card_id}/attachments", params=params)
         return True
 
     def create_checklist(self, card_id: str, name: str) -> TrelloChecklist:
         """Create a new checklist on a card."""
-        data = self._make_request("post", f"/cards/{card_id}/checklists",
-                                params={"name": name})
+        data = self._make_request("post", f"/cards/{card_id}/checklists", params={"name": name})
         return TrelloChecklist(
             id=data["id"],
             name=data["name"],
@@ -162,7 +153,7 @@ class TrelloManager:
         self,
         checklist_id: str,
         name: str,
-        *, # Make checked keyword-only
+        *,
         checked: bool = False
     ) -> dict[str, Any]:
         """Add an item to a checklist.
@@ -188,9 +179,7 @@ class TrelloManager:
         self._make_request("put", f"/cards/{card_id}", params=params)
         return True
 
-    def search_cards(self,
-                     query: str,
-                     board_id: str | None = None) -> list[TrelloCard]:
+    def search_cards(self, query: str, board_id: str | None = None) -> list[TrelloCard]:
         """Search for cards with optional board filter."""
         params = {"query": query}
         if board_id:
@@ -205,9 +194,7 @@ class TrelloManager:
                 url=card["shortUrl"],
                 board_id=card["idBoard"],
                 list_id=card["idList"],
-                due_date=datetime.fromisoformat(
-                    card["due"],
-                    ) if card.get("due") else None,
+                due_date=datetime.fromisoformat(card["due"]) if card.get("due") else None,
                 members=card.get("idMembers", []),
                 labels=card.get("labels", []),
             )
@@ -280,10 +267,7 @@ class TrelloManager:
         response = requests.post(url, params=query, timeout=10)
         return response.status_code == HTTP_OK
 
-    def add_label_to_card(self,
-                          card_id: str,
-                          label_name: str,
-                          color: str = "blue") -> bool:
+    def add_label_to_card(self, card_id: str, label_name: str, color: str = "blue") -> bool:
         """Add a label to a card.
 
         Args:
@@ -402,4 +386,3 @@ class TrelloManager:
             return False
         else:
             return True
-
