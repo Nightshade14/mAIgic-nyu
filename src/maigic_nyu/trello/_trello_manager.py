@@ -3,7 +3,7 @@ import os
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Optional
 
 import requests
 from dotenv import load_dotenv
@@ -56,7 +56,7 @@ class TrelloChecklist:
 class TrelloManager:
     """A class to interact with the Trello API using Singleton Pattern."""
 
-    _instance: ClassVar["TrelloManager"] = None
+    _instance: ClassVar[Optional["TrelloManager"]] = None
     BASE_URL: ClassVar[str] = "https://api.trello.com/1"
 
     def __new__(cls, *args, **kwargs):

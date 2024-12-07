@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Optional
 
 from src.maigic_nyu.trello._trello_manager import (
     TrelloCard,
@@ -34,7 +34,7 @@ __all__ = [
 
 class TrelloManager(BaseTrelloManager):
     """Singleton class to manage Trello interactions."""
-    _instance: ClassVar["TrelloManager"] = None
+    _instance: ClassVar[Optional["TrelloManager"]] = None
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
