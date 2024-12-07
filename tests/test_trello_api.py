@@ -30,6 +30,7 @@ from src.maigic_nyu.trello.api import (
 # We need to access private members for testing, so disable the warning
 # ruff: noqa: SLF001
 
+
 @pytest.fixture(autouse=True)
 def mock_env_vars() -> Generator[None, None, None]:
     """Fixture to mock environment variables."""
@@ -39,15 +40,17 @@ def mock_env_vars() -> Generator[None, None, None]:
     }):
         yield
 
+
 @pytest.fixture
 def mock_trello_manager() -> Generator[MagicMock, None, None]:
     """Fixture to provide a mocked TrelloManager instance."""
     with patch("src.maigic_nyu.trello.api.TrelloManager") as mock:
         instance = mock.return_value
-        original_trello = api._trello
-        api._trello = instance
+        original_instance = TrelloManager._instance
+        TrelloManager._instance = instance
         yield instance
-        api._trello = original_trello
+        TrelloManager._instance = original_instance
+
 
 @pytest.fixture
 def sample_card() -> TrelloCard:
@@ -66,19 +69,18 @@ def sample_card() -> TrelloCard:
 
 
 def test_get_trello_creates_instance() -> None:
-    """Test that _get_trello creates a new instance when none exists."""
+    """Test that TrelloManager creates a new instance when none exists."""
     patches = [
-        patch("src.maigic_nyu.trello.api.TrelloManager"),
+        "src.maigic_nyu.trello._trello_manager.TrelloManager",
     ]
 
-    for p in patches:
-        with p as mock_class:
-            # Reset for each attempt
-            api._trello = None
+    for patch_path in patches:
+        with patch(patch_path) as mock_class:
+            # Reset the singleton instance
+            TrelloManager._instance = None
 
-            # Get a new instance
-
-            result = api._get_trello()
+            # Create a new instance
+            result = TrelloManager()
             if mock_class.call_count > 0:
                 mock_class.assert_called_once()
                 assert result == mock_class.return_value
@@ -86,17 +88,19 @@ def test_get_trello_creates_instance() -> None:
 
     pytest.fail("Could not find correct patch path for TrelloManager")
 
+
 def test_get_trello_reuses_instance() -> None:
     """Test that _get_trello reuses an existing instance."""
     # Create and store a mock instance
     mock_instance = MagicMock(spec=TrelloManager)
-    api._trello = mock_instance
+    TrelloManager._instance = mock_instance
 
     # Get the instance through _get_trello
-    result = api._get_trello()
+    result = TrelloManager()
 
     # Verify it's the same instance we stored
     assert result is mock_instance
+
 
 def test_singleton_pattern() -> None:
     """Test the complete singleton pattern."""
@@ -107,13 +111,12 @@ def test_singleton_pattern() -> None:
     for p in patches:
         with p as mock_class:
             # Reset for each attempt
-            api._trello = None
-
+            TrelloManager._instance = None
 
             # First call
-            instance1 = api._get_trello()
+            instance1 = TrelloManager()
             # Second call
-            instance2 = api._get_trello()
+            instance2 = TrelloManager()
 
             # If we get here and the mock was called, we found the right path
             if mock_class.call_count > 0:
@@ -126,6 +129,7 @@ def test_singleton_pattern() -> None:
                 return
 
     pytest.fail("Could not find correct patch path for TrelloManager")
+
 
 def test_create_card(mock_trello_manager: MagicMock, sample_card: TrelloCard) -> None:
     """Test creating a new card."""
@@ -142,6 +146,7 @@ def test_create_card(mock_trello_manager: MagicMock, sample_card: TrelloCard) ->
     assert result.name == "Test Card"
     assert result.desc == "Test Description"
     mock_trello_manager.create_card.assert_called_once()
+
 
 def test_add_attachment(mock_trello_manager: MagicMock) -> None:
     """Test adding an attachment to a card."""
@@ -160,6 +165,7 @@ def test_add_attachment(mock_trello_manager: MagicMock) -> None:
         "Test Attachment"
     )
 
+
 def test_create_checklist(mock_trello_manager: MagicMock) -> None:
     """Test creating a checklist."""
     expected = TrelloChecklist(
@@ -174,6 +180,7 @@ def test_create_checklist(mock_trello_manager: MagicMock) -> None:
     assert isinstance(result, TrelloChecklist)
     assert result.name == "Test Checklist"
     mock_trello_manager.create_checklist.assert_called_once()
+
 
 def test_add_checklist_item(mock_trello_manager: MagicMock) -> None:
     """Test adding an item to a checklist."""
@@ -197,6 +204,7 @@ def test_add_checklist_item(mock_trello_manager: MagicMock) -> None:
         checked=False
     )
 
+
 def test_update_card_due_date(mock_trello_manager: MagicMock) -> None:
     """Test updating a card's due date."""
     mock_trello_manager.update_card_due_date.return_value = True
@@ -210,6 +218,7 @@ def test_update_card_due_date(mock_trello_manager: MagicMock) -> None:
         due_date
     )
 
+
 def test_search_cards(mock_trello_manager: MagicMock, sample_card: TrelloCard) -> None:
     """Test searching for cards."""
     mock_trello_manager.search_cards.return_value = [sample_card]
@@ -221,6 +230,7 @@ def test_search_cards(mock_trello_manager: MagicMock, sample_card: TrelloCard) -
     assert results[0].name == "Test Card"
     mock_trello_manager.search_cards.assert_called_once_with("test", "board123")
 
+
 def test_get_board_lists(mock_trello_manager: MagicMock) -> None:
     """Test getting lists from a board."""
     expected = ["list1", "list2"]
@@ -230,6 +240,7 @@ def test_get_board_lists(mock_trello_manager: MagicMock) -> None:
 
     assert results == expected
     mock_trello_manager.get_lists.assert_called_once_with("board123")
+
 
 def test_add_comment(mock_trello_manager: MagicMock) -> None:
     """Test adding a comment to a card."""
@@ -242,6 +253,7 @@ def test_add_comment(mock_trello_manager: MagicMock) -> None:
         "card123",
         "Test comment"
     )
+
 
 def test_add_label(mock_trello_manager: MagicMock) -> None:
     """Test adding a label to a card."""
@@ -256,6 +268,7 @@ def test_add_label(mock_trello_manager: MagicMock) -> None:
         "red"
     )
 
+
 def test_move_card(mock_trello_manager: MagicMock) -> None:
     """Test moving a card to a different list."""
     mock_trello_manager.move_card.return_value = True
@@ -264,6 +277,7 @@ def test_move_card(mock_trello_manager: MagicMock) -> None:
 
     assert result is True
     mock_trello_manager.move_card.assert_called_once_with("card123", "list456")
+
 
 def test_archive_card(mock_trello_manager: MagicMock) -> None:
     """Test archiving a card."""
@@ -274,6 +288,7 @@ def test_archive_card(mock_trello_manager: MagicMock) -> None:
     assert result is True
     mock_trello_manager.archive_card.assert_called_once_with("card123")
 
+
 def test_get_list_name(mock_trello_manager: MagicMock) -> None:
     """Test getting a list name."""
     mock_trello_manager.get_list_name.return_value = "Test List"
@@ -282,6 +297,7 @@ def test_get_list_name(mock_trello_manager: MagicMock) -> None:
 
     assert result == "Test List"
     mock_trello_manager.get_list_name.assert_called_once_with("list123")
+
 
 def test_create_list(mock_trello_manager: MagicMock) -> None:
     """Test creating a new list."""
