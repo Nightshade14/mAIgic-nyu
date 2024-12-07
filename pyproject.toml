@@ -22,6 +22,8 @@ dependencies = [
     "pyyaml>=6.0.2",
     "google-auth-stubs>=0.3.0",
     "trio>=0.27.0",
+    "pytz>=2024.2",
+    "types-pytz>=2024.2.0.20241003",
 ]
 
 [project.optional-dependencies]
