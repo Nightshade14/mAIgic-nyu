@@ -7,10 +7,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.maigic_nyu.trello._trello_manager import TrelloManager
 from src.maigic_nyu.trello.api import (
     TrelloCard,
     TrelloChecklist,
+    TrelloManager,
     add_attachment,
     add_checklist_item,
     add_comment,
@@ -67,67 +67,41 @@ def sample_card() -> TrelloCard:
     )
 
 
+
 def test_get_trello_creates_instance() -> None:
     """Test that TrelloManager creates a new instance when none exists."""
-    patches = [
-        "src.maigic_nyu.trello._trello_manager.TrelloManager",
-    ]
+    with patch("src.maigic_nyu.trello.api.TrelloManager.__new__") as mock_class:
+        TrelloManager._instance = None
 
-    for patch_path in patches:
-        with patch(patch_path) as mock_class:
-            # Reset the singleton instance
-            TrelloManager._instance = None
-
-            # Create a new instance
-            result = TrelloManager()
-            if mock_class.call_count > 0:
-                mock_class.assert_called_once()
-                assert result == mock_class.return_value
-                return
-
-    pytest.fail("Could not find correct patch path for TrelloManager")
+        result = TrelloManager()
+        mock_class.assert_called_once()
+        assert result == mock_class.return_value
 
 
 def test_get_trello_reuses_instance() -> None:
     """Test that _get_trello reuses an existing instance."""
-    # Create and store a mock instance
     mock_instance = MagicMock(spec=TrelloManager)
     TrelloManager._instance = mock_instance
 
-    # Get the instance through _get_trello
     result = TrelloManager()
 
-    # Verify it's the same instance we stored
     assert result is mock_instance
 
 
 def test_singleton_pattern() -> None:
     """Test the complete singleton pattern."""
-    patches = [
-        patch("src.maigic_nyu.trello.api.TrelloManager")
-    ]
+    with patch("src.maigic_nyu.trello.api.TrelloManager.__new__") as mock_new:
+        mock_instance = MagicMock()
+        mock_new.return_value = mock_instance
 
-    for p in patches:
-        with p as mock_class:
-            # Reset for each attempt
-            TrelloManager._instance = None
+        TrelloManager._instance = None
 
-            # First call
-            instance1 = TrelloManager()
-            # Second call
-            instance2 = TrelloManager()
+        instance1 = TrelloManager()
 
-            # If we get here and the mock was called, we found the right path
-            if mock_class.call_count > 0:
-                # Verify the constructor was only called once
-                mock_class.assert_called_once()
-                # Verify both instances are the same
-                assert instance1 is instance2
-                # Verify it's our mock instance
-                assert instance1 == mock_class.return_value
-                return
+        instance2 = TrelloManager()
 
-    pytest.fail("Could not find correct patch path for TrelloManager")
+        assert instance1 is instance2
+        assert instance1 == mock_instance
 
 
 def test_create_card(mock_trello_manager: MagicMock, sample_card: TrelloCard) -> None:
