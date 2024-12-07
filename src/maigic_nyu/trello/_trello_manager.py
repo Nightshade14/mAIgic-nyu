@@ -1,3 +1,4 @@
+"""TrelloManager module interacts with the Trello API to create cards."""
 import logging
 import os
 import time
@@ -59,7 +60,11 @@ class TrelloManager:
     _instance: ClassVar[Optional["TrelloManager"]] = None
     BASE_URL: ClassVar[str] = "https://api.trello.com/1"
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(
+            cls: type["TrelloManager"],
+            *args: tuple,
+            **kwargs: dict[str, object]
+    ) -> "TrelloManager":
         if cls._instance is None:
             cls._instance = super().__new__(cls, *args, **kwargs)
         return cls._instance
@@ -115,7 +120,10 @@ class TrelloManager:
         msg = "Max retries exceeded"
         raise _TrelloAPIError(msg)
 
-    def create_card(self, list_id: str, name: str, desc: str = "", due_date: datetime | None = None) -> TrelloCard:
+    def create_card(
+            self, list_id: str, name: str, desc: str = "",
+            due_date: datetime | None = None
+    ) -> TrelloCard:
         params = {"idList": list_id, "name": name, "desc": desc}
         if due_date:
             params["due"] = due_date.isoformat()
@@ -142,7 +150,9 @@ class TrelloManager:
 
     def create_checklist(self, card_id: str, name: str) -> TrelloChecklist:
         """Create a new checklist on a card."""
-        data = self._make_request("post", f"/cards/{card_id}/checklists", params={"name": name})
+        data = self._make_request(
+            "post", f"/cards/{card_id}/checklists", params={"name": name}
+        )
         return TrelloChecklist(
             id=data["id"],
             name=data["name"],
@@ -186,6 +196,7 @@ class TrelloManager:
             params["idBoards"] = board_id
 
         data = self._make_request("get", "/search", params=params)
+
         return [
             TrelloCard(
                 id=card["id"],
@@ -194,7 +205,11 @@ class TrelloManager:
                 url=card["shortUrl"],
                 board_id=card["idBoard"],
                 list_id=card["idList"],
-                due_date=datetime.fromisoformat(card["due"]) if card.get("due") else None,
+                due_date=(
+                    datetime.fromisoformat(card["due"])
+                    if card.get("due")
+                    else None
+                ),
                 members=card.get("idMembers", []),
                 labels=card.get("labels", []),
             )
@@ -267,7 +282,9 @@ class TrelloManager:
         response = requests.post(url, params=query, timeout=10)
         return response.status_code == HTTP_OK
 
-    def add_label_to_card(self, card_id: str, label_name: str, color: str = "blue") -> bool:
+    def add_label_to_card(
+            self, card_id: str, label_name: str, color: str = "blue"
+    ) -> bool:
         """Add a label to a card.
 
         Args:

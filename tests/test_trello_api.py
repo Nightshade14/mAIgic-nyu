@@ -7,7 +7,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.maigic_nyu.trello import api
 from src.maigic_nyu.trello._trello_manager import TrelloManager
 from src.maigic_nyu.trello.api import (
     TrelloCard,
