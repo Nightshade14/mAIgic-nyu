@@ -1,6 +1,6 @@
 """File tests hello.py file."""
 
-from maigic_nyu.api import addition, substraction
+from src.maigic_nyu.api import addition, substraction
 
 
 def test_addition() -> None:
