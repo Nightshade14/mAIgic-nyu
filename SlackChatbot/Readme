@@ -1,13 +1,13 @@
 Activate virtual env : source venv/bin/activate
-Start server : python3 slack_oauth.py
+Start server : python slack_bot.py
 Check if server is running by going to this URL http://127.0.0.1:3000/
-https://slack.com/oauth/v2/authorize?client_id=7855184757495.7892528086800&scope=chat:write,channels:read,groups:read&redirect_uri=https://wide-bags-trade.loca.lt/oauth/callback
+
+https://slack.com/oauth/v2/authorize?client_id=7855184757495.7892528086800&scope=chat:write,channels:read,groups:read&redirect_uri=https://ripe-rooms-own.loca.lt/oauth/callback
 
 Steps :
 Start slack bot : python3 slack_bot.py
-Check port 3000:  ls -i :3000 #checks what is running on port 3000
+Check port 3000:  lsof -i :3000 #checks what is running on port 3000
 Get localtunnel url : lt --port 3000 #Get the URL
-Control c and start slack_oauth.py : python3 slack_oauth.py
 Add url in request, redirect and get ouath authorization link, click allow and put password. 
 Control c and start slack bot : python3 slack_bot.py
 Type hello in slack, mention the chatbot.
