@@ -1,4 +1,4 @@
-"""Test file for Gmail class."""
+"""Test file for Gmail class."""  # noqa: INP001
 
 # pytest test/test_gmail.py -v
 
