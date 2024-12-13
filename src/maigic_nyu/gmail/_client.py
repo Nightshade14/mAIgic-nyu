@@ -25,9 +25,9 @@ class Gmail:
 
     def __init__(self) -> None:
         """Initialize Gmail client with authenticated credentials."""
-        self._client = self.authenticate()
+        self._client = self._authenticate()
 
-    def authenticate(self) -> Any:
+    def _authenticate(self) -> Any:
         """Authenticate with Gmail API using OAuth 2.0.
 
         Returns:
